@@ -1,11 +1,9 @@
 cmake_minimum_required(VERSION 3.3)
 project(OpenGLESHelloAPI)
 
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(SDK_ROOT ${CMAKE_CURRENT_LIST_DIR}/../../..)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${SDK_ROOT}/framework/cmake/modules")  #for find_package
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")    #jf
 
 if(NOT CMAKE_BUILD_TYPE) #Default to release if the user passes nothing.
 	set(CMAKE_BUILD_TYPE "Release")
@@ -135,7 +133,7 @@ elseif(UNIX)
 			set(SRC_FILES OpenGLESHelloAPI_LinuxXCB.cpp)
 		endif()
 	elseif(${PVR_WINDOW_SYSTEM} STREQUAL Wayland)
-        find_package(Wayland REQUIRED)
+		find_package(Wayland REQUIRED)
 		find_library(lib-ffi ffi HINTS ${PKG_WAYLAND_LIBRARY_DIRS})
 		
 		if(NOT ${WAYLAND_FOUND})
@@ -170,3 +168,11 @@ set_target_properties(OpenGLESHelloAPI PROPERTIES
 target_link_libraries(OpenGLESHelloAPI ${PLATFORM_LIBS})
 target_include_directories(OpenGLESHelloAPI PUBLIC ${HelloAPI_INCLUDE_DIRECTORIES})
 target_compile_definitions(OpenGLESHelloAPI PUBLIC $<$<CONFIG:Debug>:DEBUG=1> $<$<NOT:$<CONFIG:Debug>>:RELEASE=1> ) #Defines DEBUG=1 or RELEASE=1
+
+# JF: glGetSynciv
+add_executable(getSyncivTest getSyncivTest.cpp)
+set_target_properties(getSyncivTest PROPERTIES
+    CXX_STANDARD 14)
+target_link_libraries(getSyncivTest ${PLATFORM_LIBS})
+target_include_directories(getSyncivTest PUBLIC ${HelloAPI_INCLUDE_DIRECTORIES})
+target_compile_definitions(getSyncivTest PUBLIC $<$<CONFIG:Debug>:DEBUG=1> $<$<NOT:$<CONFIG:Debug>>:RELEASE=1> ) #Defines DEBUG=1 or RELEASE=1
