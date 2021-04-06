@@ -12,7 +12,45 @@
 #include <cstring>
 #include <wayland-egl.h>
 
-// gcc simple-egl.cpp -lEGL -lGLESv2 -lwayland-egl -lwayland-client -o simple-egl-display
+#include <GLES2/gl2.h>         
+#include <GLES2/gl2ext.h>
+#include <GLES3/gl31.h>
+
+// gcc simple-egl-wayland.cpp -lEGL -lGLESv2 -lwayland-egl -lwayland-client -o simple-egl-display-wayland
+
+int GlActiveSyncWait() {
+  	GLsync sync;
+	sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	// Since creating a Sync object is itself a GL command it *must* be flushed.
+	// Otherwise glGetSynciv may never succeed. Perform a flush with
+ 	// glClientWaitSync call.
+    printf("glClientWaitSync...\n");
+	GLenum status = glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT,
+									   /* timeout ns = */ 0);
+    printf("...is done\n");
+	switch (status) {
+		case GL_TIMEOUT_EXPIRED:
+		  break;
+		case GL_CONDITION_SATISFIED:
+		case GL_ALREADY_SIGNALED:
+    	  printf("GL_COND_SATISFIED or GL_ALREADY_SIGNALED\n");
+		  return 0;
+		case GL_WAIT_FAILED:
+    	  printf("GL_WAIT_FAILED\n");
+		  return 1;
+	}
+	// Start active loop.
+	GLint result = GL_UNSIGNALED;
+	while (true) {
+        printf("while(true) on glGetSynciv...\n");
+		glGetSynciv(sync, GL_SYNC_STATUS, sizeof(GLint), nullptr, &result);
+        printf("glGetSynciv...done\n");
+		if (result == GL_SIGNALED) {
+    	  printf("while(true) on glGetSynciv...GL_SIGNALED\n");
+		  return 0;
+		}
+	}
+}
 
 int main(int argc, char *argv[]) {
 
@@ -53,7 +91,7 @@ int main(int argc, char *argv[]) {
 
     // Requires wayland
 	// char const *p_name;
-    printf("Using default Wayland display...\n");
+    printf("Attempting Wayland display...\n");
     egl_native_display = EGLNativeDisplayType(wl_display_connect(NULL));
 	if (egl_native_display == NULL) {
 		printf("wl_display_connect failed: %s\n", strerror(errno));
@@ -75,7 +113,9 @@ int main(int argc, char *argv[]) {
 			return 1;
 		}	
 	}
+    printf("Woot! wl_display_connect worked...\n");
 
+	GlActiveSyncWait();
 
     return 0;
 }
